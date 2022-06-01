@@ -64,10 +64,10 @@ class data:
     #Stream function
     def get_tweets(self, hashtag, count, geo, loc, lang, lang_loc):
         
-        consumer_key = '5tAL60fZz0h2Njpew8VXCRTE7'
-        consumer_secret = '30AeKoa6kJ3n8R1we0DcdSlKB01PbycSvNh7ERuazjELrHFFA6'
-        access_token = '1531517732340080641-uaziVZ59u0fTZInYW7lpkIY80nO3BP'
-        access_token_secret = 'dMHGnMxTfl6ihlxsfEKr8RUfV9e3RQrqCA3KKsQraCzBO'
+        consumer_key = ''
+        consumer_secret = ''
+        access_token = ''
+        access_token_secret = ''
 
         auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
         auth.set_access_token(access_token, access_token_secret)
