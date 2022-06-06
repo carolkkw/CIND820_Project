@@ -61,14 +61,19 @@ entity "streaming_imdb" as e08 {
   *imdb_rating : number
   *service_name : string
 }
+entity "regionlist" as e09 {
+  *country : string
+  *region : string
+}
 e03 ||..|| e04
-e02 }o..|| e05
+e02 }|..|| e05
 e03 ||..|| e06
 e04 ||..|| e06
 e05 ||..|| e06
 e01 ||..|| e06
 e08 ||..|| e01
 e08 ||..|| e06
+e09 ||..|{ e02
 
 @enduml
 
