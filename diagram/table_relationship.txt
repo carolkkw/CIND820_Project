@@ -65,6 +65,12 @@ entity "regionlist" as e09 {
   *country : string
   *region : string
 }
+entity "imdb_region" as e10 {
+  *titleId : string
+  *region : string
+  *lanugage : string
+  *country : string
+}
 e03 ||..|| e04
 e02 }|..|| e05
 e03 ||..|| e06
@@ -74,6 +80,8 @@ e01 ||..|| e06
 e08 ||..|| e01
 e08 ||..|| e06
 e09 ||..|{ e02
+e10 }|..|{ e02
+e10 }|..|| e09
 
 @enduml
 
