@@ -36,7 +36,11 @@ entity "imdb_releaselanguage" as e05 {
 }
 entity "imdb_join" as e06 {
   *titleId : string
-  *release_language : string
+  *title : string
+  *genre : string
+  *release_year : integer
+  *imdb_rating : number
+  *release_language : integer
 }
 entity "sentiment" as e07 {
   *created_at : datetime
