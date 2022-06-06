@@ -1,0 +1,12 @@
+# Key information - DO NOT CHECK-IN
+key.key
+
+# Mac related Files
+.DS_Store
+
+# R-Related Files
+.RDataTmp
+.Rhistory
+
+# Data File - TBD
+# data/*
