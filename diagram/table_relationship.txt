@@ -1,0 +1,54 @@
+@startuml
+
+' hide the spot
+hide circle
+
+' avoid problems with angled crows feet
+skinparam linetype ortho
+
+entity "streaming" as e01 {
+  *type : string
+  *title : string
+  *date_added : date
+  *title_certificate : string
+  *month_added : string
+  *year_added : integer
+  *service_name : string
+}
+entity "imdb_akas (title.akas.tsv.gz)" as e02 {
+  *titleId : string
+  *region : string
+  *language : string
+}
+entity "imdb_rating (title.ratings.tsv.gz)" as e03 {
+  *titleId : string
+  *imdb_rating : number
+}
+entity "imdb_genre (title.basic.tsv.gz)" as e04 {
+  *titleId : string
+  *title : string
+  *genre : string
+  *release_year : integer
+}
+entity "imdb_releaselanguage" as e05 {
+  *titleId : string
+  *release_language : string
+}
+entity "imdb_join" as e06 {
+  *titleId : string
+  *release_language : string
+}
+entity "sentiment" as e07 {
+  *created_at : datetime
+  *id : string
+  *text : string
+}
+e03 ||..|| e04
+e02 }o..|| e05
+e03 ||..|| e06
+e04 ||..|| e06
+e05 ||..|| e06
+e01 ||..|| e06
+
+@enduml
+
