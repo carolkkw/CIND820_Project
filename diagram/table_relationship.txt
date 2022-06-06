@@ -47,12 +47,28 @@ entity "sentiment" as e07 {
   *id : string
   *text : string
 }
+entity "streaming_imdb" as e08 {
+  * titleId : string
+  * title : string
+  *type : string
+  *title_certificate : string
+  *genre : string
+  *date_added : date
+  *month_added : string
+  *year_added : integer
+  *release_year : integer
+  *release_language : int
+  *imdb_rating : number
+  *service_name : string
+}
 e03 ||..|| e04
 e02 }o..|| e05
 e03 ||..|| e06
 e04 ||..|| e06
 e05 ||..|| e06
 e01 ||..|| e06
+e08 ||..|| e01
+e08 ||..|| e06
 
 @enduml
 
