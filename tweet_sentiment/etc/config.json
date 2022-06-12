@@ -1,0 +1,41 @@
+{
+    "log_file" : "${DATA_PATH}/log.txt",
+    "tweet_data" : {
+        "max_result" : 20,
+        "sim_tweet" : {
+            "file" : "${SCRIPT_PATH}/sim_tweets.csv",
+            "fields" : [
+                "created_at",
+                "id",
+                "text",
+                "query"
+            ]
+        },
+        "live_tweet" : {
+            "oauth_config" : "${ETC_PATH}/oauth.json",
+            "page_limit" : 10,
+            "fields" : [
+                "created_at"
+            ]
+        },
+        "query_list" : [
+             "#netflix lang:en",
+             "#disneyplus lang:en",
+             "#hulu lang:en",
+             "#amazonprime lang:en"
+        ]
+    },
+    "export" : {
+       "format" : "JSON",
+       "file" : "${DATA_PATH}/tweets_sentiment.json",
+       "encoding" : "ascii",
+       "fields" : [
+            "created_at",
+            "id",
+            "text",
+            "query",
+            "polarity",
+            "subjectivity"
+       ]
+    }
+}

@@ -1,5 +1,6 @@
 # Key information - DO NOT CHECK-IN
 key.key
+tweet_sentiment/etc/oauth.json
 
 # Mac related Files
 .DS_Store
@@ -8,5 +9,11 @@ key.key
 .RDataTmp
 .Rhistory
 
-# Data File - TBD
-# data/*
+# tweet_sentiment related files
+tweet_sentiment/data/*
+!tweet_sentiment/data/README
+
+# Python Cache
+tweet_sentiment/scripts/__pycache__/*
+
+log.txt

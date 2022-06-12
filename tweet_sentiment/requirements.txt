@@ -1,0 +1,4 @@
+tinydb
+tweepy
+textblob
+pandas
