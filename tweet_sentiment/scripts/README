@@ -1,0 +1,43 @@
+DESCRIPTION
+===========
+The script provide the utlity to retrieve tweets using the tweets APIs, store tweets in local JSON file (tinydb format), and performing sentiment calculation
+
+OPTIONS
+=======
+--verbose
+    Turn on logging
+
+--log-level, --log_level
+    Specify the verbose level.  By default, log level is INFO
+
+--log-config,--log_config
+    Specify the logging configuration file
+
+--db
+    Specific the location of tweet database.  By default, it is store in "../data/tweets.json"
+
+--oauth
+    Specify the file contains OAuth Information.  By default, OAuth Information is stored in "oauth.json"
+
+--parameter-file, --parameter_file
+    Specific the file contains the script parameters.  By default, the list of query string is stored in "parameters.json"
+
+--action
+    Specific the action for the script.  The follow options are supported:
+        - GET
+        - APPEND
+        - ANALYZE
+
+--max-result, --max_result,
+    Define the max number of records to retieve from Twitter API.  By default, the value is 100
+
+--out
+  Specify the file name for sentiment result.  By default, the value is "../data/tweet_sentiment_export.json"
+
+PROCEDURE
+=========
+1) Regularly, run the script with APPEND action to add new tweets in the database
+> python3 ./TweetSentiment.py --action=APPEND
+
+2) To calculate sentiment for each tweet, run the script with ANALYZE action
+> python3 ./TweetSentiment.py --action=ANALYZE
