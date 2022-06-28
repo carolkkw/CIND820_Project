@@ -47,15 +47,77 @@ amazon["service_name"] <- 'Amazon'
 
 streaming <- rbind(netflix, hulu, disney, amazon)
 
-colnames(streaming)[which(names(streaming) == "rating")] <- "title_certificate"
+```
+
+
+
+```{r}
+# Check missing value in each table
+
+cat("Netflix","\n")
+colSums(is.na(streaming[which(streaming$service_name == 'Netflix'),]))
+nrow(streaming[which(streaming$service_name == 'Netflix'),])
+
+cat("Hulu","\n")
+colSums(is.na(streaming[which(streaming$service_name == 'Hulu'),]))
+nrow(streaming[which(streaming$service_name == 'Hulu'),])
+
+cat("Disney Plus","\n")
+colSums(is.na(streaming[which(streaming$service_name == 'Disney'),]))
+nrow(streaming[which(streaming$service_name == 'Disney'),])
+
+cat("Amazon Prime","\n")
+colSums(is.na(streaming[which(streaming$service_name == 'Amazon'),]))
+nrow(streaming[which(streaming$service_name == 'Amazon'),])
+
+```
+
+```{r}
+
+# change column name and check str()
+colnames(streaming)[which(names(streaming) == "rating")] <- "certificate"
+
 head(streaming,3)
 str(streaming)
 
 ```
+
+
+```{r}
+
+# check if listed_in/genre is consistent in streaming table
+
+check1 <- subset(streaming, select = c(title, type, listed_in, service_name))
+# check1 <- check1[which(check1$type == 'Movie'),]
+# head(check1[order(check1$title, decreasing = FALSE),],1000)
+
+# showing the difference
+show1 <- check1[which(check1$type == 'Movie' & check1$title == '10 Things I Hate About You'),]
+show2 <- check1[which(check1$type == 'Movie' & check1$title == '100 Streets'),]
+show3 <- check1[which(check1$type == 'Movie' & check1$title == '21'),]
+
+show1
+show2
+show3
+
+
+```
+
 ```{r}
 
 # remove columns in the streaming table
-streaming <- subset(streaming, select = -c(show_id, director, cast,  country, release_year, duration, listed_in, description))
+streaming <- subset(streaming, select = -c(show_id, director, cast, duration, listed_in, description))
+
+
+```
+
+
+```{r}
+
+# show streaming table
+
+head(streaming)
+str(streaming)
 
 ```
 
@@ -79,161 +141,169 @@ unique(streaming$year_added)
 ```
 
 ```{r}
-
-# add a field named "month_added" based on "date_added"
-library(lubridate)
-streaming$month_added <- format(streaming$date_added, "%B")
-unique(streaming$month_added)
-head(streaming)
-
-str(streaming)
-
-```
-```{r}
-
-summary(streaming)
-```
-
-
-```{r}
-
+# Get IMDB data
 library(readr)
 library(dplyr)
 
-urltitleakas = "https://datasets.imdbws.com/title.akas.tsv.gz"
 urlrating = "https://datasets.imdbws.com/title.ratings.tsv.gz"
 urltitlebasic = "https://datasets.imdbws.com/title.basics.tsv.gz"
 
-# imdb region table
-imdb <- read_tsv(file = urltitleakas, na = c("","NA","\\N"), show_col_types = FALSE)
-imdb_region <- subset(imdb, select = c(titleId, region, language))
-
 # imdb rating table
-imdb_rating <- read_tsv(file = urlrating, na = c("","NA","\\N"), show_col_types = FALSE, col_select = c(tconst, averageRating))
+imdb_rating <- read_tsv(file = urlrating, na = c("", "\\N"), trim_ws = TRUE, n_max = Inf, show_col_types = FALSE, col_select = c(tconst, averageRating))
+
+# change column name
 colnames(imdb_rating) <- c("titleId","imdb_rating")
 
 # imdb genre table
-imdb_genre <- read_tsv(file = urltitlebasic, na = c("","NA","\\N"), show_col_types = FALSE, col_select = c(tconst, primaryTitle, genres, startYear))
+imdb_genre <- read_tsv(file = urltitlebasic, na = c("", "\\N"), trim_ws = TRUE, n_max = Inf, show_col_types = FALSE, col_select = c(tconst, primaryTitle, genres, startYear), col_types = cols(.default = "c"))
+
+# change column name
 colnames(imdb_genre) <- c("titleId","title","genre","release_year")
 
-# count language
-imdb_releaselanguage <- subset(imdb_region, select = c(titleId, language))
-imdb_releaselanguage <- imdb_releaselanguage %>% group_by(titleId) %>% summarise(language = n())
-colnames(imdb_releaselanguage) <- c("titleId","release_language")
-
-# join rating, genre, and original together
-imdb_join <- left_join(imdb_genre, imdb_rating, by = "titleId")
-imdb_join <- left_join(imdb_join, imdb_releaselanguage, by = "titleId")
-
-str(imdb_join)
-
-summary(imdb_join)
 ```
+
 
 ```{r}
 
-imdb_join$release_year <- as.integer(imdb_join$release_year)
-str(imdb_join)
+# check tables
+
+head(imdb_genre)
+str(imdb_genre)
+
+head(imdb_rating)
+str(imdb_rating)
 
 ```
 
 ```{r}
+# convert release_year into integer so that we can join to streaming table later
+imdb_genre$release_year <- as.integer(imdb_genre$release_year)
 
-# join with streaming service providers table
+str(imdb_genre$release_year)
+```
+
+```{r}
+
+# join rating and genre together
+streaming_join <- left_join(imdb_rating, imdb_genre, by = "titleId")
+streaming_imdb <- left_join(streaming, streaming_join, by = c("title","release_year"), ignore_case = TRUE)
+
+# checking row num
+nrow(streaming)
+nrow(imdb_genre)
+nrow(imdb_rating)
+nrow(streaming_join)
+nrow(streaming_imdb)
+
+
+```
+
+```{r}
+
+# show join table
+head(streaming_join)
+str(streaming_join)
+
+```
+
+
+```{r}
+
+# show final table
+head(streaming_imdb)
+str(streaming_imdb)
+
+```
+
+```{r}
+
+# remove titleId after join
+streaming_imdb <- subset(streaming_imdb, select = -c(titleId))
+
+```
+
+
+```{r}
+
+# drop record without streaming service provider
 library(tidyr)
 library(dplyr)
-streaming_imdb <- left_join(streaming, imdb_join, by = "title")
-streaming_imdb <- streaming_imdb %>% drop_na(service_name, titleId) %>% select(titleId, title, type, title_certificate, genre, date_added, month_added, year_added, release_year, release_language, imdb_rating, service_name, service_name)
+streaming_imdb <- streaming_imdb %>%  
+  drop_na(service_name) 
 
 head(streaming_imdb)
 
 str(streaming_imdb)
 
-summary(streaming_imdb)
 
 ```
 
 
 ```{r}
-# get region name based on region symbol
-library(readr)
-
-urlfile = "https://raw.githubusercontent.com/lukes/ISO-3166-Countries-with-Regional-Codes/master/all/all.csv"
-
-regionlist <- read.csv(urlfile, sep = ",", header = TRUE, stringsAsFactors = FALSE)
-regionlist <- subset(regionlist, select = c(name, alpha.2))
-colnames(regionlist) <- c("country","region")
-head(regionlist,3)
-str(regionlist)
-```
-
-```{r}
-
-# left join region in imbd and alph.2 in regionlist to get region name
-library(dplyr)
-imdb_region <- left_join(imdb_region, regionlist, by = 'region')
-head(imdb_region,3)
-```
-
-```{r}
-
-library(dplyr)
-
-# observations by service
-streaming_imdb %>% group_by(service_name) %>% summarise(type = n())
-
-# breakdown by type
-streaming_imdb %>% group_by(service_name, type) %>% summarise(type = n())
-
-```
-
-
-```{r}
-
-# Check missing value in each table
+# Check missing value in final table (streaming_imdb)
 
 cat("Netflix","\n")
 colSums(is.na(streaming_imdb[which(streaming_imdb$service_name == 'Netflix'),]))
+nrow(streaming_imdb[which(streaming_imdb$service_name == 'Netflix'),])
 
 cat("Hulu","\n")
 colSums(is.na(streaming_imdb[which(streaming_imdb$service_name == 'Hulu'),]))
+nrow(streaming_imdb[which(streaming_imdb$service_name == 'Hulu'),])
 
 cat("Disney Plus","\n")
 colSums(is.na(streaming_imdb[which(streaming_imdb$service_name == 'Disney'),]))
+nrow(streaming_imdb[which(streaming_imdb$service_name == 'Disney'),])
 
 cat("Amazon Prime","\n")
 colSums(is.na(streaming_imdb[which(streaming_imdb$service_name == 'Amazon'),]))
+nrow(streaming_imdb[which(streaming_imdb$service_name == 'Amazon'),])
 
 ```
 
 ```{r}
 
-# Cleaning "title_certificate" field accordingly
+# validating table
 
-streaming_imdb$title_certificate <- gsub("NOT RATED", "NR", streaming_imdb$title_certificate)
-streaming_imdb$title_certificate <- gsub("UNRATED", "NR", streaming_imdb$title_certificate)
-streaming_imdb$title_certificate <- gsub("NOT_RATE", "NR", streaming_imdb$title_certificate)
-streaming_imdb$title_certificate <- gsub("UR", "NR", streaming_imdb$title_certificate)
-streaming_imdb$title_certificate <- gsub("NR", "NR", streaming_imdb$title_certificate)
-streaming_imdb$title_certificate <- gsub("TV-NR", "NR", streaming_imdb$title_certificate)
-streaming_imdb$title_certificate <- gsub("*min*", NA, streaming_imdb$title_certificate)
-streaming_imdb$title_certificate <- gsub("*Seasons*", NA, streaming_imdb$title_certificate)
+check2 <- subset(streaming_imdb, select = c(title, type, genre, release_year, service_name))
+check2 <- check2[which(check2$type == 'Movie' & check2$service_name == 'Netflix'),]
+head(check2[order(check2$title, decreasing = FALSE),],1000)
 
-streaming_imdb$title_certificate[grepl("Amazon", streaming_imdb$service_name) & grepl("TV Show", streaming_imdb$type) & grepl("16", streaming_imdb$title_certificate)] <- "TV-MA"
-streaming_imdb$title_certificate[grepl("Amazon", streaming_imdb$service_name) & grepl("TV Show", streaming_imdb$type) & grepl("16+", streaming_imdb$title_certificate)] <- "TV-MA"
-streaming_imdb$title_certificate[grepl("Amazon", streaming_imdb$service_name) & grepl("Movie", streaming_imdb$type) & grepl("16", streaming_imdb$title_certificate)] <- "NC-17"
-streaming_imdb$title_certificate[grepl("Amazon", streaming_imdb$service_name) & grepl("Movie", streaming_imdb$type) & grepl("16+", streaming_imdb$title_certificate)] <- "NC-17"
-streaming_imdb$title_certificate[grepl("Amazon", streaming_imdb$service_name) & grepl("Movie", streaming_imdb$type) & grepl("AGES_16_", streaming_imdb$title_certificate)] <- "NC-17"
-streaming_imdb$title_certificate[grepl("Amazon", streaming_imdb$service_name) & grepl("Movie", streaming_imdb$type) & grepl("18+", streaming_imdb$title_certificate)] <- "NC-17"
-streaming_imdb$title_certificate[grepl("Amazon", streaming_imdb$service_name) & grepl("TV Show", streaming_imdb$type) & grepl("18+", streaming_imdb$title_certificate)] <- "TV-MA"
-streaming_imdb$title_certificate[grepl("Amazon", streaming_imdb$service_name) & grepl("TV Show", streaming_imdb$type) & grepl("7+", streaming_imdb$title_certificate)] <- "TV-PG"
-streaming_imdb$title_certificate[grepl("Amazon", streaming_imdb$service_name) & grepl("Movie", streaming_imdb$type) & grepl("7+", streaming_imdb$title_certificate)] <- "PG"
-streaming_imdb$title_certificate[grepl("Amazon", streaming_imdb$service_name) & grepl("ALL", streaming_imdb$title_certificate)] <- "G"
-streaming_imdb$title_certificate[grepl("Amazon", streaming_imdb$service_name) & grepl("TV Show", streaming_imdb$type) & grepl("ALL_AGES", streaming_imdb$title_certificate)] <- "TV_G"
-streaming_imdb$title_certificate[grepl("Amazon", streaming_imdb$service_name) & grepl("Movie", streaming_imdb$type) & grepl("13+", streaming_imdb$title_certificate)] <- "PG-13"
-streaming_imdb$title_certificate[grepl("Amazon", streaming_imdb$service_name) & grepl("TV Show", streaming_imdb$type) & grepl("13+", streaming_imdb$title_certificate)] <- "TV-14"
+```
 
-unique(streaming_imdb$title_certificate)
+```{r}
+
+# check unique of certificate before getting mode
+unique(streaming_imdb$certificate)
+```
+
+```{r}
+
+# Cleaning "certificate" field accordingly
+
+streaming_imdb$certificate <- gsub("NOT RATED", "NR", streaming_imdb$certificate)
+streaming_imdb$certificate <- gsub("UNRATED", "NR", streaming_imdb$certificate)
+streaming_imdb$certificate <- gsub("NOT_RATE", "NR", streaming_imdb$certificate)
+streaming_imdb$certificate <- gsub("UR", "NR", streaming_imdb$certificate)
+streaming_imdb$certificate <- gsub("NR", "NR", streaming_imdb$certificate)
+streaming_imdb$certificate <- gsub("TV-NR", "NR", streaming_imdb$certificate)
+streaming_imdb$certificate <- gsub("*min*", NA, streaming_imdb$certificate)
+streaming_imdb$certificate <- gsub("*Seasons*", NA, streaming_imdb$certificate)
+
+streaming_imdb$certificate[grepl("Amazon", streaming_imdb$service_name) & grepl("TV Show", streaming_imdb$type) & grepl("16", streaming_imdb$certificate)] <- "TV-MA"
+streaming_imdb$certificate[grepl("Amazon", streaming_imdb$service_name) & grepl("TV Show", streaming_imdb$type) & grepl("16+", streaming_imdb$certificate)] <- "TV-MA"
+streaming_imdb$certificate[grepl("Amazon", streaming_imdb$service_name) & grepl("Movie", streaming_imdb$type) & grepl("16", streaming_imdb$certificate)] <- "NC-17"
+streaming_imdb$certificate[grepl("Amazon", streaming_imdb$service_name) & grepl("Movie", streaming_imdb$type) & grepl("16+", streaming_imdb$certificate)] <- "NC-17"
+streaming_imdb$certificate[grepl("Amazon", streaming_imdb$service_name) & grepl("Movie", streaming_imdb$type) & grepl("AGES_16_", streaming_imdb$certificate)] <- "NC-17"
+streaming_imdb$certificate[grepl("Amazon", streaming_imdb$service_name) & grepl("Movie", streaming_imdb$type) & grepl("18+", streaming_imdb$certificate)] <- "NC-17"
+streaming_imdb$certificate[grepl("Amazon", streaming_imdb$service_name) & grepl("TV Show", streaming_imdb$type) & grepl("18+", streaming_imdb$certificate)] <- "TV-MA"
+streaming_imdb$certificate[grepl("Amazon", streaming_imdb$service_name) & grepl("TV Show", streaming_imdb$type) & grepl("7+", streaming_imdb$certificate)] <- "TV-PG"
+streaming_imdb$certificate[grepl("Amazon", streaming_imdb$service_name) & grepl("Movie", streaming_imdb$type) & grepl("7+", streaming_imdb$certificate)] <- "PG"
+streaming_imdb$certificate[grepl("Amazon", streaming_imdb$service_name) & grepl("ALL", streaming_imdb$certificate)] <- "G"
+streaming_imdb$certificate[grepl("Amazon", streaming_imdb$service_name) & grepl("TV Show", streaming_imdb$type) & grepl("ALL_AGES", streaming_imdb$certificate)] <- "TV_G"
+streaming_imdb$certificate[grepl("Amazon", streaming_imdb$service_name) & grepl("Movie", streaming_imdb$type) & grepl("13+", streaming_imdb$certificate)] <- "PG-13"
+streaming_imdb$certificate[grepl("Amazon", streaming_imdb$service_name) & grepl("TV Show", streaming_imdb$type) & grepl("13+", streaming_imdb$certificate)] <- "TV-14"
+
+unique(streaming_imdb$certificate)
 
 ```
 
@@ -241,23 +311,23 @@ unique(streaming_imdb$title_certificate)
 
 ```{r}
 
-# Find mode for "rating"
+# Find mode for "certificate"
 
 getmode <- function(v) {
    uniqv <- unique(v)
    uniqv[which.max(tabulate(match(v, uniqv)))]
 }
 
-mode_netflix <- getmode(streaming_imdb[which(streaming_imdb$service_name == 'Netflix'),"title_certificate"])
+mode_netflix <- getmode(streaming_imdb[which(!is.na(streaming_imdb$certificate) & streaming_imdb$service_name == 'Netflix'),"certificate"])
 paste("Netflix:", mode_netflix)
 
-mode_hulu <- getmode(streaming_imdb[which(streaming_imdb$service_name == 'Hulu'),"title_certificate"])
+mode_hulu <- getmode(streaming_imdb[which(!is.na(streaming_imdb$certificate) &streaming_imdb$service_name == 'Hulu'),"certificate"])
 paste("Hulu:", mode_hulu)
 
-mode_disney <- getmode(streaming_imdb[which(streaming_imdb$service_name == 'Disney'),"title_certificate"])
+mode_disney <- getmode(streaming_imdb[which(!is.na(streaming_imdb$certificate) &streaming_imdb$service_name == 'Disney'),"certificate"])
 paste("Disney+:", mode_disney)
 
-mode_amazon <- getmode(streaming_imdb[which(streaming_imdb$service_name == 'Amazon'),"title_certificate"])
+mode_amazon <- getmode(streaming_imdb[which(!is.na(streaming_imdb$certificate) &streaming_imdb$service_name == 'Amazon'),"certificate"])
 paste("Aamazon Prime:", mode_amazon)
 
 ```
@@ -266,209 +336,228 @@ paste("Aamazon Prime:", mode_amazon)
 
 # Change NA to mode we found above for title_certificate
 
-streaming_imdb$title_certificate[grepl("Netflix", streaming_imdb$service_name) & is.na(streaming_imdb$title_certificate)] <- mode_netflix
-streaming_imdb$title_certificate[grepl("Hulu", streaming_imdb$service_name) & is.na(streaming_imdb$title_certificate)] <- mode_hulu
-streaming_imdb$title_certificate[grepl("Disney", streaming_imdb$service_name) & is.na(streaming_imdb$title_certificate)] <- mode_disney
-streaming_imdb$title_certificate[grepl("Amazon", streaming_imdb$service_name) & is.na(streaming_imdb$title_certificate)] <- mode_amazon
+streaming_imdb$certificate[grepl("Netflix", streaming_imdb$service_name) & is.na(streaming_imdb$certificate)] <- mode_netflix
+streaming_imdb$certificate[grepl("Hulu", streaming_imdb$service_name) & is.na(streaming_imdb$certificate)] <- mode_hulu
+streaming_imdb$certificate[grepl("Disney", streaming_imdb$service_name) & is.na(streaming_imdb$certificate)] <- mode_disney
+streaming_imdb$certificate[grepl("Amazon", streaming_imdb$service_name) & is.na(streaming_imdb$certificate)] <- mode_amazon
 
 ```
 
 ```{r}
 
-# add new column to minimize title_certificate
+# reducing certificate levels to the name for understanding easily
 
-streaming_imdb$title_certificate[which(streaming_imdb$title_certificate == "PG-13" | streaming_imdb$title_certificate == "TV-14")] <- 'Teens'
+streaming_imdb$certificate[which(streaming_imdb$certificate == "PG-13" | streaming_imdb$certificate == "TV-14")] <- 'Teens'
 
-streaming_imdb$title_certificate[which(streaming_imdb$title_certificate == "TV-Y" | streaming_imdb$title_certificate == "TV-Y7" | streaming_imdb$title_certificate == "TV-Y7-FV" | streaming_imdb$title_certificate == "TV-PG" | streaming_imdb$title_certificate == "TV-G" | streaming_imdb$title_certificate == "TV-PG")] <- 'Kids'
+streaming_imdb$certificate[which(streaming_imdb$certificate == "TV-Y" | streaming_imdb$certificate == "TV-Y7" | streaming_imdb$certificate == "TV-Y7-FV" | streaming_imdb$certificate == "TV-PG" | streaming_imdb$certificate == "TV-G" | streaming_imdb$certificate == "TV-PG")] <- 'Kids'
 
-streaming_imdb$title_certificate[which(streaming_imdb$title_certificate == "NC-17" | streaming_imdb$title_certificate == "TV-MA")] <- 'Adult'
+streaming_imdb$certificate[which(streaming_imdb$certificate == "NC-17" | streaming_imdb$certificate == "TV-MA")] <- 'Adult'
 
-streaming_imdb$title_certificate[which(streaming_imdb$title_certificate == "G")] <- 'Suitable For All'
+streaming_imdb$certificate[which(streaming_imdb$certificate == "G")] <- 'Suitable For All'
 
-streaming_imdb$title_certificate[which(streaming_imdb$title_certificate == "PG")] <- 'Parental Guidance'
+streaming_imdb$certificate[which(streaming_imdb$certificate == "PG")] <- 'Parental Guidance'
 
-streaming_imdb$title_certificate[which(streaming_imdb$title_certificate == "R")] <- 'Passed only for persons 18 and over'
+streaming_imdb$certificate[which(streaming_imdb$certificate == "R")] <- 'Persons 18 and over'
 
-streaming_imdb$title_certificate[which(streaming_imdb$title_certificate == "NR")] <- 'No Rating'
+streaming_imdb$certificate[which(streaming_imdb$certificate == "NR")] <- 'No Rating'
 
-unique(streaming_imdb$title_certificate)
-```
-```{r}
-
-# Convert character to factor
-
-streaming_imdb$type <- as.factor(streaming_imdb$type)
-
-streaming_imdb$genre <- as.factor(streaming_imdb$genre)
-
-streaming_imdb$title_certificate <- as.factor(streaming_imdb$title_certificate)
-
-streaming_imdb$service_name <- as.factor(streaming_imdb$service_name)
-
+unique(streaming_imdb$certificate)
 ```
 
 
 ```{r}
-library(dplyr)
-# remove rows with missing values in any column
-streaming_imdb2 <- streaming_imdb[complete.cases(streaming_imdb),]
-
-# check the difference before and after
-streaming_imdb %>% group_by(service_name) %>% summarise(type = n())
-
-streaming_imdb2 %>% group_by(service_name) %>% summarise(type = n())
-
-# double check if there are still missing value
-colSums(is.na(streaming_imdb2[which(streaming_imdb2$company == 'Netflix'),]))
-
-```
-
-
-```{r}
-
-# Check min, median, mean, max of data for Netflix
-cat("Netflix","\n")
-summary(streaming_imdb2[which(streaming_imdb2$service_name == 'Netflix'),])
-
-
-```
-
-```{r}
-
-# Check min, median, mean, max of data for Hulu
-
-cat("Hulu","\n")
-summary(streaming_imdb2[which(streaming_imdb2$service_name == 'Hulu'),])
-
-```
-
-```{r}
-
-# Check min, median, mean, max of data for Disney
-cat("Disney+","\n")
-summary(streaming_imdb2[which(streaming_imdb2$service_name == 'Disney'),])
-
-```
-
-```{r}
-
-# Check min, median, mean, max of data for Amazon Prime
-cat("Amazon_Prime","\n")
-summary(streaming_imdb2[which(streaming_imdb2$service_name == 'Amazon'),])
-
-```
-
-```{r}
-
-# Is Normal Distribution?
-# install.packages('nortest')
-library(nortest)
-
-set.seed(1)
-
-# check average rating for movie and TV Show
-hist(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Netflix' & streaming_imdb2$type == 'Movie')], main = "Netflix Average Rating on Movie")
-ad.test(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Netflix' & streaming_imdb2$type == 'Movie')])
-
-hist(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Netflix' & streaming_imdb2$type == 'TV Show')], main = "Netflix Average Rating on TV Show")
-ad.test(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Netflix' & streaming_imdb2$type == 'TV Show')])
-
-# check added year for movie and TV show
-
-hist(streaming_imdb2$year_added[which(streaming_imdb2$service_name == 'Netflix' & streaming_imdb2$type == 'Movie')], main = "Netflix Title Added Year on Movie")
-ad.test(streaming_imdb2$year_added[which(streaming_imdb2$service_name == 'Netflix' & streaming_imdb2$type == 'Movie')])
-
-hist(streaming_imdb2$year_added[which(streaming_imdb2$service_name == 'Netflix' & streaming_imdb2$type == 'TV Show')], main = "Netflix Title Added Year on TV Show")
-ad.test(streaming_imdb2$year_added[which(streaming_imdb2$service_name == 'Netflix' & streaming_imdb2$type == 'TV Show')])
-
-```
-
-```{r}
-
-library(nortest)
-
-set.seed(1)
-
-# check average rating for movie and TV Show
-hist(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Hulu' & streaming_imdb2$type == 'Movie')], main = "Hulu Average Rating on Movie")
-ad.test(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Hulu' & streaming_imdb2$type == 'Movie')])
-
-hist(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Hulu' & streaming_imdb2$type == 'TV Show')], main = "Hulu Average Rating on TV Show")
-ad.test(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Hulu' & streaming_imdb2$type == 'TV Show')])
-
-# check added year for movie and TV show
-
-hist(streaming_imdb2$year_added[which(streaming_imdb2$service_name == 'Hulu' & streaming_imdb2$type == 'Movie')], main = "Hulu Title Added Year on Movie")
-ad.test(streaming_imdb2$year_added[which(streaming_imdb2$service_name == 'Hulu' & streaming_imdb2$type == 'Movie')])
-
-hist(streaming_imdb2$year_added[which(streaming_imdb2$service_name == 'Hulu' & streaming_imdb2$type == 'TV Show')], main = "Hulu Title Added Year on TV Show")
-ad.test(streaming_imdb2$year_added[which(streaming_imdb2$service_name == 'Hulu' & streaming_imdb2$type == 'TV Show')])
-```
-
-```{r}
-
-library(nortest)
-
-set.seed(1)
-
-# check average rating for movie and TV Show
-hist(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Disney' & streaming_imdb2$type == 'Movie')], main = "Disney+ Average Rating on Movie")
-ad.test(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Disney' & streaming_imdb2$type == 'Movie')])
-
-hist(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Disney' & streaming_imdb2$type == 'TV Show')], main = "Disney+ Average Rating on TV Show")
-ad.test(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Disney' & streaming_imdb2$type == 'TV Show')])
-
-# check added year for movie and TV show
-
-hist(streaming_imdb2$year_added[which(streaming_imdb2$service_name == 'Disney' & streaming_imdb2$type == 'Movie')], main = "Disney+ Title Added Year on Movie")
-ad.test(streaming_imdb2$year_added[which(streaming_imdb2$service_name == 'Disney' & streaming_imdb2$type == 'Movie')])
-
-hist(streaming_imdb2$year_added[which(streaming_imdb2$service_name == 'Disney' & streaming_imdb2$type == 'TV Show')], main = "Disney+ Title Added Year on TV Show")
-ad.test(streaming_imdb2$year_added[which(streaming_imdb2$service_name == 'Disney' & streaming_imdb2$type == 'TV Show')])
-
-```
-
-```{r}
-
-library(nortest)
-
-set.seed(1)
-
-# check average rating for movie and TV Show
-hist(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Amazon' & streaming_imdb2$type == 'Movie')], main = "Amazon Average Rating on Movie")
-ad.test(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Amazon' & streaming_imdb2$type == 'Movie')])
-
-hist(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Amazon' & streaming_imdb2$type == 'TV Show')], main = "Amazon Average Rating on TV Show")
-ad.test(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Amazon' & streaming_imdb2$type == 'TV Show')])
-
-# check added year for movie and TV show
-
-hist(streaming_imdb2$year_added[which(streaming_imdb2$service_name == 'Amazon' & streaming_imdb2$type == 'Movie')], main = "Amazon Title Added Year on Movie")
-
-
-hist(streaming_imdb2$year_added[which(streaming_imdb2$service_name == 'Amazon' & streaming_imdb2$type == 'TV Show')], main = "Amazon Title Added Year on TV Show")
-```
-```{r}
-# check outlier
+# check outlier using original table 
 
 library(ggplot2)
 
-ggplot(streaming_imdb2, aes(x = year_added, y = type, fill = service_name)) +
+ggplot(streaming_imdb, aes(x = year_added, y = type, fill = service_name)) +
   geom_boxplot(position = "dodge", alpha = 1) + 
   ggtitle("Type by Year_Added") +
   theme(plot.title = element_text(hjust = 0.5))
 
 ```
 
+
 ```{r}
 
-# check TV show and movie by company
+library(dplyr)
+# complete cases
+streaming_imdb2 <- streaming_imdb[complete.cases(streaming_imdb),]
+
+# reorder columns
+streaming_imdb2 <- streaming_imdb2 %>%
+  relocate(type, title, genre, certificate, country, imdb_rating, date_added
+         , year_added, release_year, service_name)
+head(streaming_imdb2)
+
+# group streaming service 
+netflix2 <- streaming_imdb2 %>% filter(service_name == 'Netflix')
+hulu2 <- streaming_imdb2 %>% filter(service_name == 'Hulu')
+disney2 <- streaming_imdb2 %>% filter(service_name == 'Disney')
+amazon2 <- streaming_imdb2 %>% filter(service_name == 'Amazon')
+
+```
+
+```{r}
+
+# change columns to factor
+
+colns <- sapply(streaming_imdb2[-10], is.character)
+streaming_imdb2[colns] <- lapply(streaming_imdb2[colns], factor)
+
+sapply(streaming_imdb2, class)
+
+```
+
+
+```{r}
+library(dplyr)
+
+# check the difference before and after
+streaming_imdb %>% 
+  group_by(service_name, type) %>%
+  count(service_name, type)
+
+streaming_imdb2 %>% 
+  group_by(service_name) %>%
+  count(service_name)
+
+
+```
+
+
+
+```{r}
+
+# check summary of each streaming services
+summary(streaming_imdb2[which(streaming_imdb2$service_name == 'Netflix'),])
+
+```
+
+```{r}
+# summary of Hulu
+summary(streaming_imdb2[which(streaming_imdb2$service_name == 'Hulu'),])
+
+```
+
+```{r}
+
+# summary of Disney
+summary(streaming_imdb2[which(streaming_imdb2$service_name == 'Disney'),])
+
+```
+
+```{r}
+
+# summary of Amazon Prime
+summary(streaming_imdb2[which(streaming_imdb2$service_name == 'Amazon'),])
+
+```
+
+```{r}
+
+# Is Netflix Normal Distribution?
+# install.packages('nortest')
+library(nortest)
+
+set.seed(1)
+
+# check normal distribution of imdb_rating for movie and TV Show
+hist(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Netflix' & streaming_imdb2$type == 'Movie' )], main = "Netflix IMDB Rating on Movie", xlab = "imdb_rating")
+ad.test(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Netflix' & streaming_imdb2$type == 'Movie')])
+
+hist(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Netflix' & streaming_imdb2$type == 'TV Show')], main = "Netflix IMDB Rating on TV Show", xlab = "imdb_rating")
+ad.test(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Netflix' & streaming_imdb2$type == 'TV Show')])
+
+```
+
+```{r}
+
+# Is Hulu Normal Distribution?
+library(nortest)
+
+set.seed(1)
+
+# check normal distrbution of imdb_rating for movie and TV Show
+hist(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Hulu' & streaming_imdb2$type == 'Movie')], main = "Hulu IMDB Rating on Movie", xlab = "imdb_rating")
+ad.test(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Hulu' & streaming_imdb2$type == 'Movie')])
+
+hist(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Hulu' & streaming_imdb2$type == 'TV Show')], main = "Hulu IMDB Rating on TV Show", xlab = "imdb_rating")
+ad.test(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Hulu' & streaming_imdb2$type == 'TV Show')])
+
+```
+
+```{r}
+
+# Is Disney Normal Distribution?
+library(nortest)
+
+set.seed(1)
+
+# check normal distrbution of imdb_rating
+hist(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Disney' & streaming_imdb2$type == 'Movie')], main = "Disney+ IMDB Rating on Movie", xlab = "imdb_rating")
+ad.test(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Disney' & streaming_imdb2$type == 'Movie')])
+
+hist(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Disney' & streaming_imdb2$type == 'TV Show')], main = "Disney+ IMDB Rating on TV Show", xlab = "imdb_rating")
+ad.test(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Disney' & streaming_imdb2$type == 'TV Show')])
+
+```
+
+```{r}
+
+# Is Amazon Prime Normal Distribution?
+library(nortest)
+
+set.seed(1)
+
+# check normal distribution of imdb_rating for movie and TV Show
+hist(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Amazon' & streaming_imdb2$type == 'Movie')], main = "Amazon IMDB Rating on Movie", xlab = "imdb_rating")
+ad.test(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Amazon' & streaming_imdb2$type == 'Movie')])
+
+hist(streaming_imdb2$imdb_rating[which(streaming_imdb2$service_name == 'Amazon' & streaming_imdb2$type == 'TV Show')], main = "Amazon IMDB Rating on TV Show", xlab = "imdb_rating")
+
+
+```
+
+
+
+
+
+
+```{r}
+
+# check TV show and movie by company 
 
 library(ggplot2)
 
-ggplot(streaming_imdb2, aes(x = type, fill = service_name)) +
+ggplot(streaming_imdb2[which(streaming_imdb2$release_year >= 2015),], aes(x = type, fill = service_name)) +
   geom_bar(position = "dodge", alpha = 0.5) +
-  ggtitle("Content by Company") +
+  ggtitle("Content by Company After 2015") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+```{r}
+
+# check movie content released after year 2015
+
+library(ggplot2)
+
+ggplot(streaming_imdb2[which(streaming_imdb2$release_year >= 2015 & streaming_imdb2$type == 'Movie'),], aes(x = release_year, fill = service_name)) +
+  geom_bar(position = "dodge", alpha = 0.5) + 
+  ggtitle("Movie Released by Company After 2015") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+```{r}
+
+# check movie content released after year 2015
+
+library(ggplot2)
+
+ggplot(streaming_imdb2[which(streaming_imdb2$release_year >= 2015 & streaming_imdb2$type == 'TV Show'),], aes(x = release_year, fill = service_name)) +
+  geom_bar(position = "dodge", alpha = 0.5) + 
+  ggtitle("TV Shows Released by Company After 2015") +
   theme(plot.title = element_text(hjust = 0.5))
 
 ```
@@ -489,57 +578,392 @@ ggplot(streaming_imdb2[which(streaming_imdb2$year_added >= 2015),], aes(x = year
 
 ```{r}
 
+# check Movie content added by company after year 2015
+
+library(ggplot2)
+
+ggplot(streaming_imdb2[which(streaming_imdb2$year_added >= 2015 & streaming_imdb2$type == 'Movie'),], aes(x = year_added, fill = service_name)) +
+  geom_bar(position = "dodge", alpha = 0.5) + 
+  ggtitle("Movie Added by Company After 2015") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+
+```{r}
+
+# check TV Show content added by company after year 2015
+
+library(ggplot2)
+
+ggplot(streaming_imdb2[which(streaming_imdb2$year_added >= 2015 & streaming_imdb2$type == 'TV Show'),], aes(x = year_added, fill = service_name)) +
+  geom_bar(position = "dodge", alpha = 0.5) + 
+  ggtitle("TV Show Added by Company After 2015") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+
+
+
+```{r}
+
 # analyze the correlation coefficient between year added and imdb rating
 
 library(ggplot2)
 
 streaming_imdb2 %>% 
 ggplot( aes(x = year_added, 
-           y = imdb_rating)) +
+           y = imdb_rating, fill = service_name)) +
   geom_point() + 
   geom_smooth(method = "lm")+
-  ggtitle("Year Added VS IMDB Rating") +
-  labs(x = "Year Added", y = "IMDB Rating")
+  ggtitle("Year Added vs IMDB Rating") +
+  labs(x = "Year Added", y = "IMDB Rating") +
+  theme(plot.title = element_text(hjust = 0.5))
 
-cor.test(streaming_imdb2$year_added, streaming_imdb2$imdb_rating)
+```
 
-lm_rating <- lm(year_added~ imdb_rating, data =streaming_imdb2)
-summary(lm_rating)
+
+```{r}
+
+# analyze the correlation coefficient between year added and imdb rating
+
+library(ggplot2)
+
+streaming_imdb2 %>% 
+ggplot( aes(x = release_year, 
+           y = imdb_rating, fill = service_name)) +
+  geom_point() + 
+  geom_smooth(method = "lm")+
+  ggtitle("Year Released vs IMDB Rating") +
+  labs(x = "Year Released", y = "IMDB Rating") +
+  theme(plot.title = element_text(hjust = 0.5))
 
 ```
 
 ```{r}
 
-# Analyze the correlation relationship between year added and language
+# analyze the correlation coefficient between year added and imdb rating
+
+library(ggplot2)
+
 streaming_imdb2 %>% 
 ggplot( aes(x = year_added, 
-           y = release_language)) +
-  geom_point() +
+           y = release_year, fill = service_name)) +
+  geom_point() + 
   geom_smooth(method = "lm")+
-                
-  ggtitle("Year Added Vs Release Language") +
-  labs(x = "Year Added", y = "Release Language")
+  ggtitle("Year Released vs Year Added") +
+  labs(x = "Year Added", y = "Year Released") +
+  theme(plot.title = element_text(hjust = 0.5)) 
 
-cor.test(streaming_imdb2$year_added, streaming_imdb2$release_language)
 
-lm_language <- lm(year_added~ release_language, data =streaming_imdb2)
-summary(lm_language)
+
+```
+
+
+```{r}
+
+# change factor to numeric
+df_number <- subset(streaming_imdb2, select = -c(date_added, title))
+i <- sapply(df_number[-8], is.factor) 
+
+df_number[-8][i] <- (as.data.frame(lapply(streaming_imdb2[-8][,i], function(x) as.numeric(replace(x, is.na(x), 0)))))
+sapply(df_number,class)
+
+
+```
+
+```{r}
+# corrplot
+
+library(corrplot)
+
+cor(data.frame(df_number[-8]))
+
+corrplot(cor(data.frame(df_number[-8])), method = "ellipse")
 
 ```
 
 ```{r}
 
-# analyze if there is any relationship between service and IMDB rating
+# cor and summary for year_added vs imdb_rating
+
+cor(df_number$year_added, df_number$imdb_rating)
+lm_yradded <- lm(imdb_rating~ year_added , data =df_number)
+summary(lm_yradded)
+
+```
+
+```{r}
+lm_release <- lm(imdb_rating~ release_year , data =df_number)
+summary(lm_release)
+
+```
+
+```{r}
+lm_type <- lm(imdb_rating~ type , data =df_number)
+summary(lm_type)
+
+```
+
+
+
+```{r}
+
+# analysis of variance
+cat("ANOVA:")
+anova_all <- aov(imdb_rating ~ ., data = df_number[-8])
+
+anova(anova_all)
+
+```
+
+```{r}
+
+# analysis of variance
+cat("ANOVA:")
+anova_service <- aov(imdb_rating ~ service_name, data = df_number)
+
+anova(anova_service)
+
+```
+
+
+```{r}
+
+# Post-hoc test after ANOVA above
+
+# install.packages("multcomp")
+library(multcomp)
+
+post_test <- glht(anova_service,
+  linfct = mcp(service_name = "Tukey")
+)
+
+summary(post_test)
+
+```
+
+```{r}
+
+# install.packages("ggpubr")
+library(ggpubr)
+
+# method = "kruskal.test"
+ggboxplot(streaming_imdb2, x = "service_name", y = "imdb_rating",
+          color = "blue", palette = "jco")+
+  stat_compare_means()
+# Change method to anova
+ggboxplot(streaming_imdb2, x = "service_name", y = "imdb_rating",
+          color = "red", palette = "jco")+
+  stat_compare_means(method = "anova")
+```
+
+
+
+
+```{r}
+
+# country vs imdb rating for Movie
+
+datamovie <- streaming_imdb2 %>% filter(type =='Movie')
+
+data <- streaming_imdb2 %>%
+  mutate(country = strsplit(as.character(country), ", ")) %>%
+  unnest(country) %>% 
+  group_by(country, imdb_rating, service_name)
+ 
+ summary <- data %>% filter(!is.na(country)) %>%
+  group_by(country) %>% 
+  summarise(Total = n())
+ 
+  summary <-summary[order(summary$Total, decreasing = TRUE), ]
+  summary <- summary %>% top_n(10)
+  
+  # Top 10
+  countries <-summary$country
+    
+  data <- datamovie %>%
+filter(country %in% countries)
+
+data %>%
+  mutate(country = reorder(country, imdb_rating, FUN = mean)) %>%   
+  ggplot(aes(country, imdb_rating, fill = service_name)) +    
+  geom_boxplot() +
+  ggtitle("Country vs IMDB Rating for Movie Top 10") +
+  labs(x = "Country", y = "IMDB Rating") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+```{r}
+
+# country vs imdb rating for Movie
+
+dataTV <- streaming_imdb2 %>% filter(type =='TV Show')
+
+data <- streaming_imdb2 %>%
+  mutate(country = strsplit(as.character(country), ", ")) %>%
+  unnest(country) %>% 
+  group_by(country, imdb_rating, service_name)
+ 
+ summary <- data %>% filter(!is.na(country)) %>%
+  group_by(country) %>% 
+  summarise(Total = n())
+ 
+  summary <-summary[order(summary$Total, decreasing = TRUE), ]
+  summary <- summary %>% top_n(10)
+  
+  # Top 10
+  countries <-summary$country
+    
+  data <- dataTV %>%
+filter(country %in% countries)
+
+data %>%
+  mutate(country = reorder(country, imdb_rating, FUN = mean)) %>%   
+  ggplot(aes(country, imdb_rating, fill = service_name)) +    
+  geom_boxplot() +
+  ggtitle("Country vs IMDB Rating for TV Shows Top 10") +
+  labs(x = "Country", y = "IMDB Rating") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+```{r}
+
+# country vs imdb rating
+
+data <- streaming_imdb2 %>%
+  mutate(country = strsplit(as.character(country), ", ")) %>%
+  unnest(country) %>% 
+  group_by(country, imdb_rating, service_name)
+ 
+ summary <- data %>% filter(!is.na(country)) %>%
+  group_by(country) %>% 
+  summarise(Total = n())
+ 
+  summary <-summary[order(summary$Total, decreasing = TRUE), ]
+  summary <- summary %>% top_n(10)
+  
+  # Top 10
+  countries <-summary$country
+    
+  data <- streaming_imdb2 %>%
+filter(country %in% countries)
+
+data %>%
+  mutate(country = reorder(country, imdb_rating, FUN = mean)) %>%   
+  ggplot(aes(country, imdb_rating, fill = service_name)) +    
+  geom_boxplot() +
+  ggtitle("Country vs IMDB Rating Top 10") +
+  labs(x = "Country", y = "IMDB Rating") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+```{r}
+
+# analysis of variance
+
+anova_rating <- aov(imdb_rating ~ country, data = streaming_imdb2)
+
+summary(anova_rating)
+
+```
+
+```{r}
+
+# check all certificate added by company after year 2015
+
+library(ggplot2)
+
+ggplot(streaming_imdb2[which(streaming_imdb2$year_added >= 2015),], aes(x = certificate, fill = service_name)) +
+  geom_bar(position = "dodge", alpha = 0.5) + 
+  ggtitle("All Type of Certificate After 2015") +
+  theme(plot.title = element_text(angle = 0, hjust = 0.5)) +
+  theme(axis.text.x = element_text(angle = 90))
+
+```
+
+
+
+```{r}
+
+# check Movie certificate added by company after year 2015
+
+library(ggplot2)
+
+ggplot(streaming_imdb2[which(streaming_imdb2$year_added >= 2015 & streaming_imdb2$type == 'Movie'),], aes(x = certificate, fill = service_name)) +
+  geom_bar(position = "dodge", alpha = 0.5) + 
+  ggtitle("Movie Certificate After 2015") +
+  theme(plot.title = element_text(angle = 0, hjust = 0.5)) +
+  theme(axis.text.x = element_text(angle = 90))
+
+```
+
+
+```{r}
+
+# check TV Show certificate added by company after year 2015
+
+library(ggplot2)
+
+ggplot(streaming_imdb2[which(streaming_imdb2$year_added >= 2015 & streaming_imdb2$type == 'TV Show'),], aes(x = certificate, fill = service_name)) +
+  geom_bar(position = "dodge", alpha = 0.5) + 
+  ggtitle("TV Certificate After 2015") +
+  theme(plot.title = element_text(angle = 0, hjust = 0.5)) +
+  theme(axis.text.x = element_text(angle = 90))
+
+```
+
+```{r}
+
+# genre vs imdb rating
+
+data <- streaming_imdb2 %>%
+  mutate(genre = strsplit(as.character(genre), ",")) %>%
+  unnest(genre) %>% 
+  group_by(genre, imdb_rating, service_name)
+ 
+ summary <- data %>% filter(!is.na(genre)) %>%
+  group_by(genre) %>% 
+  summarise(Total = n())
+ 
+  summary <-summary[order(summary$Total, decreasing = TRUE), ]
+  summary <- summary %>% top_n(10)
+  
+  # Top 10
+  countries <-summary$genre
+    
+  data <- datamovie %>%
+filter(genre %in% countries)
+
+data %>%
+  mutate(genre = reorder(genre, imdb_rating, FUN = mean)) %>%   
+  ggplot(aes(genre, imdb_rating, fill = service_name)) +    
+  geom_boxplot() +
+  ggtitle("Genre vs IMDB Rating Top 10") +
+  labs(x = "Genre", y = "IMDB Rating") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+```{r}
+
+# check mean and sd of imdb_rating
 
 streaming_imdb2 %>%
 group_by(service_name) %>%
   summarise(
     size = n(),
     mean = mean(imdb_rating, na.rm = TRUE),
+    median = median(imdb_rating, na.rm = TRUE),
     sd = sd(imdb_rating, na.rm = TRUE)
   )
 
-anova_rating <- aov(imdb_rating ~ service_name, data = streaming_imdb2)
-summary(anova_rating)
 ```
-
