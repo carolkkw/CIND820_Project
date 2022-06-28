@@ -1,0 +1,140 @@
+---
+
+title: "Untitled"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+# install.packages("tidyverse")
+# install.packages("doParallel")
+# install.packages("pdp")
+library(stringr)
+library(tidyverse)
+library(lubridate)
+library(caret)
+library(doParallel)
+library(lattice)
+library(pdp)
+library(ggplot2)
+
+```
+
+```{r}
+# getwd()
+
+# install.packages("rjson")
+library(jsonlite)
+library(tidyr)
+library(dplyr)
+json_data <- read_json("tweet_sentiment/data/tweets_sentiment.json", simplifyVector = TRUE)
+
+
+```
+
+
+```{r}
+
+df <- json_data %>% as_tibble() %>% as.data.frame()
+df <- subset(df, select = -c(text, id, created_at_time))
+df <- df[order(df$created_at_date),]
+head(df)
+str(df)
+
+```
+
+```{r}
+# change created_at_date to date format
+df$created_at_date <- trimws(df$created_at_date)
+df$created_at_date <- as.Date(df$created_at_date, format = '%Y-%m-%d')
+str(df$created_at_date)
+```
+
+```{r}
+
+# change query from character to factor
+df$query <- as.factor(df$query)
+
+```
+
+
+```{r}
+
+summary(df)
+```
+
+```{r}
+# check cor
+df1 <- subset(df, select = c(polarity, subjectivity))
+cor(df1)
+```
+```{r}
+# missing values
+colSums(is.na(df))
+```
+
+```{r}
+
+unique(df$query)
+```
+
+```{r}
+
+# keep the first keyword
+
+df$query <- str_extract(df$query, "(\\w+)()")
+unique(df$query)
+```
+
+
+```{r}
+
+plot(df$created_at_date)
+abline(reg=lm(df$created_at_date ~ time(df$created_at_date)))
+  
+```
+```{r}
+
+ggplot(df, aes(y = polarity, fill = query)) +
+  geom_boxplot(alpha = 0.5) +
+  ggtitle("Polarity") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+```{r}
+
+ggplot(df, aes(y = subjectivity, fill = query)) +
+  geom_boxplot(alpha = 0.5) +
+  ggtitle("Subjectivity") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+
+
+
+
