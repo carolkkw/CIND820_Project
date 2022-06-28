@@ -7,6 +7,7 @@ import argparse
 import logging
 import logging.config
 
+from datetime import datetime
 from enum import Enum
 from textblob import TextBlob
 
@@ -105,6 +106,9 @@ class TweetSentiment() :
         db_data = tweet_db_obj.get()
         for item in db_data :
             textblob = TextBlob(item['text'])
+            created_at = datetime.strptime(item['created_at'], '%m/%d/%Y %H:%M')
+            item['created_at_date'] = created_at.strftime("%Y-%m-%d")
+            item['created_at_time'] = created_at.strftime("%H:%M")
             item['polarity'] = textblob.sentiment.polarity
             item['subjectivity'] = textblob.sentiment.subjectivity
         export_format = TweetSentiment.ExportFormat[export_format]
@@ -172,6 +176,7 @@ if __name__ == "__main__" :
 
             except Exception as exception :
                 log.warning("Cannot load log configuration \"%s\"", args.log_config)
+                print(exception)
 
     # Create TweetData and Tweet Database object
     tweet_data = TweetData.get_tweet_obj(args.sim_tweet)
