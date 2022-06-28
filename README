@@ -63,8 +63,16 @@ This project is to analyze combined title data of Netflix, Hulu, Disney+, and Am
 ### Analysis of Netflix Ability to Maintain Leadership.docx
 	< analytic paper >
 
-### Analysis_of_Netflix.Rmd
+### Analysis_of_Sentiment.Rmd
 	< R script >
+
+### Analysis_of_Streaming_Services.ipynb
+	< Python script >
+
+### Analysis_of_Streaming_Services.Rmd
+	< R script >
+
+
 
 ### README
 
