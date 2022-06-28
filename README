@@ -1,1 +1,76 @@
+# Table of contents
+	•	General Info
+	•	Content of Repository
+	•	Status of Progress
+
+# General Info
+
+This project is to analyze combined title data of Netflix, Hulu, Disney+, and Amazon Prime including their sentiment from Twitter to conclude if Netflix can maintain its leadership among competitors. As Data Analysis cycle, after define problem, data cleaning is an important role after understanding the data, especially there are a lot of missing values and inconsistent values from multiple sources. Different streaming services have different description. As a result, some data is taken from IMDB website and joined back to title data. The analysis is based on the data with IMDB rating within these 4 services. Models (e.g. KNN, Logistic, Regression, Naive Bayes, Random Forest, Cross-Valication) are used to evaluate accuracy, precious, recall and ROC.
+
+# Content of Repository
+
+## Main Folder
+
+### data
+	< location where all csv files are >
+
+	•	amazon_prime_titles.csv < raw data of Amazon Prime >
+	•	disney_plus_titles.csv < raw data of Disney+ >
+	•	hulu_titles.csv < raw data of Hulu >
+	•	netflix_titles.csv < raw data of Netflix >
+	•	streaming_imdb2.csv < rbind all data with complete.cases() function >
+
+### diagram
+	< location where save the relationship of tables with description >
+
+	•	Final_Tables.txt < diagram with final title table and sentiment >
+	•	table_relationshp.txt < diagram to show the relationship of tables >
+
+### tweet_sentiment
+
+#### data
+	< location where to save all raw data >
+
+	•	tweets_sentiment.json < output from tweets >
+
+#### etc
+	< location where to store the configuration for the script >
+
+	•	config.json < default configuration for tweet_sentiment >
+	•	log.conf < configure the logging parameters for tweet_sentiment >
+	•	oath.tmpl < provide a template for oauth.json that stored the parameters for tweeter API access >
+
+#### scripts
+	< location where to store all files required to access tweet data >
+
+	•	parameters.py < to access the parameter stored in the config.json >
+	•	sim_tweets.csv < store some tweets to be used with the sim_tweet flag. If the sim_tweet flag (simulate tweet) is set, the _get_recent_tweets function will return tweets from sim_tweet.csv instead of tweeter API >
+	•	tweet_data.py < to access the tinydb required by tweet_sentiment.py >
+	•	tweet_sentiment.py < main entry point of the script where to execute different action based on the input parameters >
+
+#### Dockerfile 
+	< define how to create the docker image >
+
+#### cron_job 
+	< configure the corn within the docker container. Current setup is to run the script every 15 minutes >
+
+#### requirements.txt
+	< the required python package - for building the docker image >
+
+### .gitignore
+	< file that will not be archived by git repo >
+
+### Analysis of Netflix Ability to Maintain Leadership.docx
+	< analytic paper >
+
+### Analysis_of_Netflix.Rmd
+	< R script >
+
+### README
+
+Status of Progress:
+	•	deep dive to sentiment data - in progress
+	•	apply at least one model (planning: Naive Bayes) to sentiment - evaluating
+	•	accuracy, precious, recall, ROC - breakdown for each streaming services - in progress
+	•	Predicting movies Genres using NLP - evaluating
 
