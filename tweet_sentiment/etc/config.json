@@ -30,7 +30,8 @@
        "file" : "${DATA_PATH}/tweets_sentiment.json",
        "encoding" : "ascii",
        "fields" : [
-            "created_at",
+            "created_at_date",
+            "created_at_time",
             "id",
             "text",
             "query",
