@@ -1,27 +1,22 @@
 @startuml
 entity streaming_imdb {
-  *titleId : string <<unique identifier of the tile>>
-  *title : string <<title of the movie / TV show>>
+  *title : string <<Title of the Movie / Tv Show>>
   *type : string <<e.g. Movie / TV Show>>
-  *title_certificate : string <<certificate of tile>>
+  *certificate : string <<certificate of tile>>
   *genre : string <<includes up to three genres associated with the title>>
-  *date_added : date <<the date title is added>>
-  *month_added : string <<the month title is added>>
+  *date_added : date <<Date title was added on >>
   *year_added : integer <<the year title is added>>
   *release_year : integer <<represents the release year of a title. In the case of TV Series, it is the series start year.>>
-  *release_language : int <<the count of language of the title>>
-  *imdb_rating : number <<weighted average of all the individual user ratings>>
+  *country : string <<Country where the movie / show was produced>>
+  *imdb_rating : numeric <<weighted average of all the individual user ratings>>
   *service_name : string <<name of streaming service>>
 }
-entity imdb_region {
-  *titleId : string <<unique identifier of the tile>>
-  *region : string <<the region for this version of the title>>
-  *language : string <<the language of the title>>
-  *country : string <<the country for this version of the title>>
-}
 entity sentiment {
-  *created_at : datetime <<datetime >>
+  *created_at : datetime <<datetime tweet created>>
   *id : string <<id of the tweet>>
   *text : string <<text of the tweet>>
+  *query : string <<search blob provided to twitter API>>
+  *polarity : float <<sentiment score>>
+  *subjectivity : float <<identify sentiment subjective>>
 }
 @enduml

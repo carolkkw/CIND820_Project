@@ -9,79 +9,56 @@ skinparam linetype ortho
 entity "streaming" as e01 {
   *type : string
   *title : string
+  *country : string
   *date_added : date
-  *title_certificate : string
-  *month_added : string
-  *year_added : integer
+  *certificate : string
   *service_name : string
+  *release_year : integer
 }
-entity "imdb_akas (title.akas.tsv.gz)" as e02 {
+entity "imdb_rating (title.ratings.tsv.gz)" as e02 {
   *titleId : string
-  *region : string
-  *language : string
+  *imdb_rating : numeric
 }
-entity "imdb_rating (title.ratings.tsv.gz)" as e03 {
-  *titleId : string
-  *imdb_rating : number
-}
-entity "imdb_genre (title.basic.tsv.gz)" as e04 {
+entity "imdb_genre (title.basic.tsv.gz)" as e03 {
   *titleId : string
   *title : string
   *genre : string
   *release_year : integer
 }
-entity "imdb_releaselanguage" as e05 {
-  *titleId : string
-  *release_language : string
-}
-entity "imdb_join" as e06 {
+entity "imdb_join" as e04 {
   *titleId : string
   *title : string
   *genre : string
   *release_year : integer
-  *imdb_rating : number
-  *release_language : integer
+  *imdb_rating : numeric
 }
-entity "sentiment" as e07 {
-  *created_at : datetime
-  *id : string
-  *text : string
-}
-entity "streaming_imdb" as e08 {
-  * titleId : string
-  * title : string
+entity "streaming_imdb" as e05 {
   *type : string
-  *title_certificate : string
+  *title : string
+  *country : string
+  *certificate : string
   *genre : string
-  *date_added : date
-  *month_added : string
+  *date_added : date  
   *year_added : integer
   *release_year : integer
-  *release_language : int
-  *imdb_rating : number
+  *imdb_rating : numeric
   *service_name : string
 }
-entity "regionlist" as e09 {
-  *country : string
-  *region : string
+entity "sentiment" as e06 {
+  *created_at : string
+  *id : numeric
+  *text : string
+  *query : string
+  *polarity : numeric
+  *subjectivity : numeric
 }
-entity "imdb_region" as e10 {
-  *titleId : string
-  *region : string
-  *lanugage : string
-  *country : string
-}
+
+
+e02 ||..|| e04
 e03 ||..|| e04
-e02 }|..|| e05
-e03 ||..|| e06
-e04 ||..|| e06
-e05 ||..|| e06
-e01 ||..|| e06
-e08 ||..|| e01
-e08 ||..|| e06
-e09 ||..|{ e02
-e10 }|..|{ e02
-e10 }|..|| e09
+
+e01 ||..|| e05
+e04 ||..|| e05
 
 @enduml
 
