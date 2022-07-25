@@ -96,10 +96,21 @@ cor(df1)
 colSums(is.na(df))
 ```
 
+
 ```{r}
 
 unique(df$query)
 ```
+
+```{r}
+
+df %>% 
+  group_by(query) %>%
+  summarise(count = length(query))
+
+```
+
+
 
 ```{r}
 

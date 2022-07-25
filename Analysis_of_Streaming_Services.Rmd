@@ -264,7 +264,7 @@ nrow(streaming_imdb[which(streaming_imdb$service_name == 'Amazon'),])
 
 # validating table
 
-check2 <- subset(streaming_imdb, select = c(title, type, genre, release_year, service_name))
+check2 <- subset(streaming_imdb, select = c(title, type, genre, imdb_rating, release_year, service_name))
 check2 <- check2[which(check2$type == 'Movie' & check2$service_name == 'Netflix'),]
 head(check2[order(check2$title, decreasing = FALSE),],1000)
 
@@ -742,6 +742,14 @@ post_test <- glht(anova_service,
 
 summary(post_test)
 
+```
+```{r}
+TukeyHSD(anova_service)
+
+```
+
+```{r}
+plot(TukeyHSD(anova_service))
 ```
 
 ```{r}

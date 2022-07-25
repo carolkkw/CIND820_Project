@@ -5,7 +5,7 @@
 
 # General Info
 
-This project is to analyze combined title data of Netflix, Hulu, Disney+, and Amazon Prime including their sentiment from Twitter to conclude if Netflix can maintain its leadership among competitors. As Data Analysis cycle, after define problem, data cleaning is an important role after understanding the data, especially there are a lot of missing values and inconsistent values from multiple sources. Different streaming services have different description. As a result, some data is taken from IMDB website and joined back to title data. The analysis is based on the data with IMDB rating within these 4 services. Models (e.g. KNN, Logistic, Regression, Naive Bayes, Random Forest, Cross-Valication) are used to evaluate accuracy, precious, recall and ROC.
+This project is to analyze combined title data of Netflix, Hulu, Disney+, and Amazon Prime including their sentiment from Twitter to conclude if Netflix can maintain its leadership among competitors. As Data Analysis cycle, after define problem, data cleaning is an important role after understanding the data, especially there are a lot of missing values and inconsistent values from multiple sources. Different streaming services have different description. As a result, some data is taken from IMDB website and joined back to title data. K-fold Cross-Validation and SMOTE are used in Models (e.g. KNN, Logistic Regression, Naive Bayes, Random Forest, Decision Tree) are used to evaluate accuracy, precious, recall, F1 score, ROC AUC score, test score, fit time, and score time.
 
 # Content of Repository
 
@@ -31,6 +31,7 @@ This project is to analyze combined title data of Netflix, Hulu, Disney+, and Am
 #### data
 	< location where to save all raw data >
 
+	•	Sentiment_Clean_Data.csv < cleaned output from tweets >
 	•	tweets_sentiment.json < output from tweets >
 
 #### etc
@@ -48,10 +49,10 @@ This project is to analyze combined title data of Netflix, Hulu, Disney+, and Am
 	•	tweet_data.py < to access the tinydb required by tweet_sentiment.py >
 	•	tweet_sentiment.py < main entry point of the script where to execute different action based on the input parameters >
 
-#### Dockerfile 
+#### Dockerfile
 	< define how to create the docker image >
 
-#### cron_job 
+#### cron_job
 	< configure the corn within the docker container. Current setup is to run the script every 15 minutes >
 
 #### requirements.txt
@@ -66,19 +67,14 @@ This project is to analyze combined title data of Netflix, Hulu, Disney+, and Am
 ### Analysis_of_Sentiment.Rmd
 	< R script >
 
-### Analysis_of_Streaming_Services.ipynb
+### Analysis_of_Sentiment.ipynb
 	< Python script >
 
 ### Analysis_of_Streaming_Services.Rmd
 	< R script >
 
+### Analysis_of_Streaming_Services.ipynb
+	< Python script >
 
 
 ### README
-
-Status of Progress:
-	•	deep dive to sentiment data - in progress
-	•	apply at least one model (planning: Naive Bayes) to sentiment - evaluating
-	•	accuracy, precious, recall, ROC - breakdown for each streaming services - in progress
-	•	Predicting movies Genres using NLP - evaluating
-
